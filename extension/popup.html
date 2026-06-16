@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>PhishGuard AI</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      width: 360px;
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at 20% 0%, #0d1b2a 0%, #050a12 55%, #03060c 100%);
+      color: #e6f1ff;
+      padding: 16px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .header .title {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+    .header .title span { color: #00ffaa; }
+
+    .url-box {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: #7fa8c9;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 12px;
+      word-break: break-all;
+    }
+
+    button {
+      width: 100%;
+      background: linear-gradient(90deg, #00ffaa, #00c3ff);
+      color: #03060c;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    button:disabled {
+      background: rgba(255,255,255,0.08);
+      color: #6f93b8;
+      cursor: not-allowed;
+    }
+
+    .verdict {
+      border-radius: 10px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .verdict-danger {
+      background: linear-gradient(90deg, rgba(255,59,92,0.18), rgba(255,59,92,0.04));
+      border: 1px solid rgba(255,59,92,0.4);
+      color: #ff6b8a;
+    }
+    .verdict-warn {
+      background: linear-gradient(90deg, rgba(255,200,55,0.18), rgba(255,200,55,0.04));
+      border: 1px solid rgba(255,200,55,0.4);
+      color: #ffd95e;
+    }
+    .verdict-safe {
+      background: linear-gradient(90deg, rgba(0,255,170,0.18), rgba(0,255,170,0.04));
+      border: 1px solid rgba(0,255,170,0.4);
+      color: #4dffc2;
+    }
+
+    .factor {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      padding: 6px 8px;
+      margin-bottom: 4px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.03);
+      border-left: 3px solid rgba(255,255,255,0.15);
+      color: #cfe7ff;
+    }
+    .factor.up { border-left-color: #ff6b8a; }
+    .factor.down { border-left-color: #4dffc2; }
+
+    .status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: #6f93b8;
+      text-align: center;
+      margin-top: 8px;
+    }
+    .section-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: #7fa8c9;
+      letter-spacing: 0.1em;
+      margin: 10px 0 6px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span style="font-size:1.3rem;">🛡️</span>
+    <div class="title">Phish<span>Guard</span> AI</div>
+  </div>
+
+  <div class="url-box" id="current-url">Loading current page URL...</div>
+
+  <button id="scan-btn">▶ SCAN THIS PAGE</button>
+
+  <div id="results"></div>
+
+  <div class="status" id="status">
+    Backend: <span id="backend-status">checking...</span>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

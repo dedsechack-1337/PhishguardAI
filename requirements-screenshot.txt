@@ -1,0 +1,6 @@
+# ============================================================
+# PhishGuard AI — Screenshot Analysis Add-on (~280MB extra)
+# Install AFTER requirements.txt to enable the Screenshot tab.
+# After installing, also run: python -m playwright install chromium
+# ============================================================
+playwright==1.48.0

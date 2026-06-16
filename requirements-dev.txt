@@ -1,0 +1,7 @@
+# ============================================================
+# PhishGuard AI — Dev / Optional extras
+# Only needed if you want to retrain with XGBoost (+~250MB)
+# or use SHAP-based explanations (+~340MB).
+# ============================================================
+xgboost==2.1.1
+# shap==0.46.0  # uncomment only if you want SHAP values (pulls in numba/llvmlite)
