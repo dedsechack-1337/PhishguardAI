@@ -1,0 +1,32 @@
+# ============================================================
+# PhishGuard AI — Core Requirements
+# Estimated install size: ~510MB (Python packages only)
+# Note: scipy is a mandatory sklearn dependency, unavoidable.
+# ============================================================
+
+# --- ML inference (URL model) ---
+scikit-learn==1.5.2
+joblib==1.4.2
+pandas==2.2.3
+numpy==1.26.4
+
+# --- Web UI (streamlit without pyarrow/pydeck -- see setup scripts) ---
+# streamlit is installed via setup_and_run with --no-deps to skip
+# pyarrow (153MB) and pydeck (23MB) which our UI doesn't use.
+# DO NOT install streamlit from this file directly.
+
+# --- Backend API (browser extension) ---
+fastapi==0.115.5
+uvicorn[standard]==0.32.0
+pydantic==2.9.2
+
+# --- Domain reputation (URLhaus) ---
+requests==2.32.3
+
+# --- Screenshot & visual similarity (optional -- see requirements-screenshot.txt) ---
+# pillow and imagehash are small and included in core for the comparison logic.
+pillow==10.4.0
+imagehash==4.3.1
+
+# --- Email analysis via Claude API (no local model needed) ---
+anthropic==0.39.0

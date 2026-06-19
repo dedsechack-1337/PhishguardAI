@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhishGuard AI | SOC Console</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ─────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;background:radial-gradient(circle at 20% 0%,#0d1b2a 0%,#050a12 55%,#03060c 100%);color:#e6f1ff;min-height:100vh}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#050a12}::-webkit-scrollbar-thumb{background:#1e3a52;border-radius:3px}
+
+/* ── Layout ───────────────────────────────────── */
+.container{max-width:1300px;margin:0 auto;padding:0 24px 40px}
+
+/* ── Header ───────────────────────────────────── */
+.header{display:flex;align-items:center;justify-content:space-between;padding:20px 0 18px;border-bottom:1px solid rgba(0,255,170,.12);margin-bottom:24px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{font-size:1.6rem}
+.logo-text{font-family:'JetBrains Mono',monospace;font-size:1.7rem;font-weight:800;letter-spacing:.04em;color:#fff}
+.logo-text span{color:#00ffaa}
+.logo-sub{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#7fa8c9;letter-spacing:.15em;text-transform:uppercase;margin-top:2px}
+.badge{font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:.3rem .9rem;border-radius:999px;border:1px solid;white-space:nowrap;transition:all .3s}
+.badge-online{color:#00ffaa;border-color:rgba(0,255,170,.35);background:rgba(0,255,170,.07)}
+.badge-offline{color:#ff6b8a;border-color:rgba(255,107,138,.35);background:rgba(255,107,138,.07)}
+
+/* ── Tabs ─────────────────────────────────────── */
+.tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.tab-btn{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.55rem 1.1rem;border-radius:10px 10px 0 0;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);color:#7fa8c9;cursor:pointer;transition:all .2s;letter-spacing:.04em}
+.tab-btn:hover{background:rgba(0,255,170,.05);color:#cfe7ff}
+.tab-btn.active{background:rgba(0,255,170,.09);border-color:rgba(0,255,170,.3);color:#00ffaa}
+.tab-btn.disabled{opacity:.4;cursor:not-allowed}
+.panel{display:none}.panel.active{display:grid;grid-template-columns:1fr 320px;gap:16px}
+@media(max-width:820px){.panel.active{grid-template-columns:1fr}}
+
+/* ── Card ─────────────────────────────────────── */
+.card{background:rgba(15,30,48,.65);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:20px 22px;backdrop-filter:blur(6px)}
+.card-label{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#7fa8c9;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+
+/* ── Inputs ───────────────────────────────────── */
+input[type=text],textarea{width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(0,255,170,.2);border-radius:10px;color:#e6f1ff;font-family:'JetBrains Mono',monospace;font-size:.85rem;padding:10px 14px;transition:border-color .2s;outline:none;resize:vertical}
+input[type=text]:focus,textarea:focus{border-color:#00ffaa;box-shadow:0 0 0 1px rgba(0,255,170,.2)}
+textarea{min-height:160px}
+
+/* ── Buttons ──────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.82rem;letter-spacing:.05em;padding:.65rem 1.4rem;border-radius:10px;border:none;cursor:pointer;transition:all .2s;margin-top:12px}
+.btn-primary{background:linear-gradient(90deg,#00ffaa,#00c3ff);color:#03060c}
+.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{background:rgba(255,255,255,.08);color:#6f93b8;cursor:not-allowed;filter:none;transform:none}
+
+/* ── Verdict ──────────────────────────────────── */
+.verdict{border-radius:12px;padding:14px 18px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1rem;display:flex;align-items:center;justify-content:space-between;margin-top:16px;animation:fadeIn .3s ease}
+.verdict-danger{background:linear-gradient(90deg,rgba(255,59,92,.18),rgba(255,59,92,.04));border:1px solid rgba(255,59,92,.4);color:#ff6b8a}
+.verdict-warn{background:linear-gradient(90deg,rgba(255,200,55,.18),rgba(255,200,55,.04));border:1px solid rgba(255,200,55,.4);color:#ffd95e}
+.verdict-safe{background:linear-gradient(90deg,rgba(0,255,170,.18),rgba(0,255,170,.04));border:1px solid rgba(0,255,170,.4);color:#4dffc2}
+.risk-score{font-size:1.8rem;font-weight:800;font-family:'JetBrains Mono',monospace}
+
+/* ── Breakdown ────────────────────────────────── */
+.breakdown-title{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#7fa8c9;letter-spacing:.12em;margin:14px 0 6px}
+.factor{font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:7px 10px;margin-bottom:4px;border-radius:7px;background:rgba(255,255,255,.03);border-left:3px solid rgba(255,255,255,.12);display:flex;justify-content:space-between;align-items:center;gap:12px;animation:fadeIn .3s ease}
+.factor.up{border-left-color:#ff6b8a}.factor.down{border-left-color:#4dffc2}
+.factor-desc{color:#cfe7ff;flex:1}
+.factor-meta{color:#6f93b8;font-size:.72rem;white-space:nowrap}
+.factor-reason{color:#7fa8c9;font-size:.72rem;flex:1}
+.elapsed{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:#6f93b8;margin-top:8px}
+
+/* ── Info panel ───────────────────────────────── */
+.info-section{margin-bottom:16px}
+.info-title{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;color:#cfe7ff;margin-bottom:8px}
+.info-row{font-size:.8rem;color:#7fa8c9;margin-bottom:4px}
+.info-row strong{color:#cfe7ff}
+.sample-block{background:rgba(0,255,170,.05);border:1px solid rgba(0,255,170,.15);border-radius:8px;padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#4dffc2;word-break:break-all;margin-bottom:6px;cursor:pointer;transition:all .2s}
+.sample-block:hover{background:rgba(0,255,170,.1)}
+.hint{font-size:.7rem;color:#6f93b8;margin-top:8px;line-height:1.5}
+
+/* ── Progress bar ─────────────────────────────── */
+.progress-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.08);margin:8px 0 4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .6s ease}
+.fill-danger{background:linear-gradient(90deg,#ff3b5c,#ff6b8a)}
+.fill-warn{background:linear-gradient(90deg,#c8783a,#ffd95e)}
+.fill-safe{background:linear-gradient(90deg,#00c87a,#00ffaa)}
+
+/* ── Screenshot ───────────────────────────────── */
+.screenshot-img{width:100%;border-radius:10px;border:1px solid rgba(0,255,170,.15);margin-top:12px}
+.disabled-notice{background:rgba(255,200,55,.06);border:1px solid rgba(255,200,55,.25);border-radius:10px;padding:14px 16px;color:#ffd95e;font-size:.82rem;line-height:1.6;margin-top:10px}
+code{background:rgba(0,255,170,.08);color:#00ffaa;border-radius:4px;padding:1px 5px;font-family:'JetBrains Mono',monospace;font-size:.82em}
+
+/* ── Spinner ──────────────────────────────────── */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,255,170,.2);border-top-color:#00ffaa;border-radius:50%;animation:spin .7s linear infinite;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Footer ───────────────────────────────────── */
+.footer{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#6f93b8;text-align:center;margin-top:32px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05)}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">🛡️</div>
+      <div>
+        <div class="logo-text">Phish<span>Guard</span> AI</div>
+        <div class="logo-sub">AI-Driven Phishing Detection Console · URL / Email / Reputation / Screenshot</div>
+      </div>
+    </div>
+    <div class="badge badge-online" id="status-badge">● checking...</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('url')">🔗 URL ANALYZER</button>
+    <button class="tab-btn" onclick="switchTab('email')">✉️ EMAIL ANALYZER</button>
+    <button class="tab-btn" onclick="switchTab('rep')">🌐 DOMAIN REPUTATION</button>
+    <button class="tab-btn {% if not screenshot_ready %}disabled{% endif %}" id="tab-screenshot" onclick="switchTab('screenshot')">🖼️ SCREENSHOT ANALYSIS</button>
+  </div>
+
+  <!-- ── TAB: URL Analyzer ── -->
+  <div id="panel-url" class="panel active">
+    <div class="card">
+      <div class="card-label">Target URL</div>
+      <input type="text" id="url-input" placeholder="http://paypal-secure-login.verify-account.tk/signin?user=123" />
+      <button class="btn btn-primary" id="url-btn" onclick="analyzeUrl()" {% if not url_model_ready %}disabled{% endif %}>
+        ▶ RUN ANALYSIS
+      </button>
+      {% if not url_model_ready %}
+      <div class="disabled-notice">⚠️ URL model not found. Run <code>setup_and_run.sh</code> or <code>python src/train.py</code> first.</div>
+      {% endif %}
+      <div id="url-result"></div>
+    </div>
+    <div class="card">
+      <div class="info-section">
+        <div class="info-title">🧪 TEST SAMPLES</div>
+        <div class="sample-block" onclick="setInput('url-input','https://www.google.com')">https://www.google.com</div>
+        <div class="sample-block" onclick="setInput('url-input','http://paypal-secure-login.verify-account.tk/signin?user=123')">http://paypal-secure-login.verify-account.tk/signin?user=123</div>
+        <div class="sample-block" onclick="setInput('url-input','http://192.168.1.1/login.php?id=4521')">http://192.168.1.1/login.php?id=4521</div>
+        <div class="sample-block" onclick="setInput('url-input','https://bit.ly/3xYzAbC')">https://bit.ly/3xYzAbC</div>
+      </div>
+      <hr style="border-color:rgba(255,255,255,.06);margin:12px 0">
+      <div class="info-row"><strong>Engine:</strong> Random Forest</div>
+      <div class="info-row"><strong>Explainability:</strong> Feature-attribution (custom)</div>
+      <div class="info-row"><strong>Features:</strong> 25 lexical & structural signals</div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Email Analyzer ── -->
+  <div id="panel-email" class="panel">
+    <div class="card">
+      <div class="card-label">Email Body</div>
+      <textarea id="email-input" placeholder="Paste suspicious email content here..."></textarea>
+      <button class="btn btn-primary" id="email-btn" onclick="analyzeEmail()">▶ RUN ANALYSIS</button>
+      {% if not email_api %}
+      <div class="disabled-notice">ℹ️ <code>ANTHROPIC_API_KEY</code> not set — keyword-based fallback active. Set the env var for AI-powered analysis.</div>
+      {% endif %}
+      <div id="email-result"></div>
+    </div>
+    <div class="card">
+      <div class="info-section">
+        <div class="info-title">🧪 TEST SAMPLE</div>
+        <div class="sample-block" onclick="setInput('email-input','URGENT: Your PayPal account has been suspended. Click here to verify your identity within 24 hours: http://paypal-secure.tk/verify')">URGENT: Your PayPal account has been suspended. Click here to verify your identity...</div>
+      </div>
+      <hr style="border-color:rgba(255,255,255,.06);margin:12px 0">
+      <div class="info-row"><strong>Engine:</strong> {% if email_api %}Claude claude-haiku-4-5 (API){% else %}Keyword fallback{% endif %}</div>
+      <div class="info-row"><strong>Explainability:</strong> {% if email_api %}AI-identified signals{% else %}Keyword matches{% endif %}</div>
+      <div class="info-row"><strong>Status:</strong> {% if email_api %}✅ API key detected{% else %}⚠️ Set ANTHROPIC_API_KEY{% endif %}</div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Domain Reputation ── -->
+  <div id="panel-rep" class="panel">
+    <div class="card">
+      <div class="card-label">URL or Domain</div>
+      <input type="text" id="rep-input" placeholder="e.g. http://example.com or example.com" />
+      <button class="btn btn-primary" id="rep-btn" onclick="checkReputation()">▶ CHECK REPUTATION</button>
+      <div id="rep-result"></div>
+    </div>
+    <div class="card">
+      <div class="info-section">
+        <div class="info-title">🧪 TEST SAMPLES</div>
+        <div class="sample-block" onclick="setInput('rep-input','google.com')">google.com</div>
+        <div class="sample-block" onclick="setInput('rep-input','example.com')">example.com</div>
+      </div>
+      <hr style="border-color:rgba(255,255,255,.06);margin:12px 0">
+      <div class="info-row"><strong>Source:</strong> URLhaus (abuse.ch)</div>
+      <div class="info-row"><strong>Lookup:</strong> Full URL + host history</div>
+      <div class="info-row"><strong>Cost:</strong> Free, no API key</div>
+      <div class="hint">Requires outbound access to <code>urlhaus-api.abuse.ch</code>. If your network blocks it, results will show "unknown".</div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Screenshot Analysis ── -->
+  <div id="panel-screenshot" class="panel">
+    <div class="card">
+      <div class="card-label">Target URL</div>
+      <input type="text" id="screenshot-input" placeholder="https://example.com" />
+      {% if screenshot_ready %}
+      <button class="btn btn-primary" id="screenshot-btn" onclick="analyzeScreenshot()">▶ CAPTURE & ANALYZE</button>
+      {% else %}
+      <button class="btn btn-primary" disabled>▶ CAPTURE & ANALYZE</button>
+      <div class="disabled-notice">
+        ⚠️ Playwright (screenshot engine) not installed.<br>
+        Run <code>install_screenshot.sh</code> (Linux/macOS) or
+        <code>install_screenshot.bat</code> (Windows) to enable this feature.<br><br>
+        Adds ~280MB (playwright lib + Chromium browser).
+      </div>
+      {% endif %}
+      <div id="screenshot-result"></div>
+    </div>
+    <div class="card">
+      <div class="info-section">
+        <div class="info-title">🧪 TEST SAMPLE</div>
+        <div class="sample-block" onclick="setInput('screenshot-input','https://www.wikipedia.org')">https://www.wikipedia.org</div>
+      </div>
+      <hr style="border-color:rgba(255,255,255,.06);margin:12px 0">
+      <div class="info-row"><strong>Method:</strong> Perceptual hashing (pHash)</div>
+      <div class="info-row"><strong>Brands loaded:</strong> <span id="brand-count">loading...</span></div>
+      <div class="info-row"><strong>Engine:</strong> Lightweight (no deep learning)</div>
+      <div class="hint">Run <code>python src/build_brand_reference.py</code> to build/update the brand reference set with more sites.</div>
+    </div>
+  </div>
+
+  <div class="footer">PhishGuard AI — for research &amp; educational use only. Always verify suspicious links/emails through additional channels.</div>
+</div>
+
+<script>
+/* ── Helpers ── */
+function $(id){return document.getElementById(id)}
+function setInput(id,val){$(id).value=val}
+
+function verdictClass(label,score){
+  if(label==='phishing'&&score>=70) return['verdict-danger','🔴 HIGH RISK — LIKELY PHISHING','fill-danger']
+  if(label==='phishing'||score>=40) return['verdict-warn','🟡 SUSPICIOUS — PROCEED WITH CAUTION','fill-warn']
+  return['verdict-safe','🟢 LOW RISK — LIKELY LEGITIMATE','fill-safe']
+}
+
+function spinner(){return'<span class="spinner"></span>'}
+
+function renderVerdict(label,score,model){
+  const[cls,text,fillCls]=verdictClass(label,score)
+  return`
+    <div class="verdict ${cls}">
+      <span>${text}</span>
+      <span class="risk-score">${score.toFixed(1)}%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill ${fillCls}" style="width:${Math.min(score,100)}%"></div></div>
+    <div class="elapsed" style="margin-bottom:6px">ENGINE: <code>${model}</code></div>`
+}
+
+function renderFactors(factors,kind){
+  if(!factors||!factors.length)return''
+  let html='<div class="breakdown-title">── ANALYSIS BREAKDOWN ──</div>'
+  factors.forEach(f=>{
+    if(kind==='url'){
+      const up=f.effect==='increases'
+      html+=`<div class="factor ${up?'up':'down'}">
+        <span class="factor-desc">${up?'▲':'▼'} ${f.description}</span>
+        <span class="factor-meta">val=${parseFloat(f.value).toPrecision(3)} | Δ${f.shap_contribution>0?'+':''}${f.shap_contribution.toFixed(4)}</span>
+      </div>`
+    }else{
+      html+=`<div class="factor up">
+        <span class="factor-desc">▲ "<code>${f.token}</code>"</span>
+        <span class="factor-reason">${f.reason||'phishing signal'}</span>
+      </div>`
+    }
+  })
+  return html
+}
+
+/* ── Status check ── */
+async function checkStatus(){
+  try{
+    const r=await fetch('/api/status')
+    const d=await r.json()
+    const b=$('status-badge')
+    if(d.url_model_ready){
+      b.textContent='● ENGINES ONLINE'
+      b.className='badge badge-online'
+    }else{
+      b.textContent='● MODELS NOT TRAINED'
+      b.className='badge badge-offline'
+    }
+    // update brand count
+    const bc=$('brand-count')
+    if(bc) bc.textContent='run build_brand_reference.py to populate'
+  }catch(e){
+    $('status-badge').textContent='● SERVER ERROR'
+    $('status-badge').className='badge badge-offline'
+  }
+}
+checkStatus()
+
+/* ── Tab switching ── */
+function switchTab(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'))
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'))
+  $('panel-'+name).classList.add('active')
+  event.currentTarget.classList.add('active')
+}
+
+/* ── URL Analysis ── */
+async function analyzeUrl(){
+  const url=$('url-input').value.trim()
+  if(!url) return
+  const btn=$('url-btn'); const res=$('url-result')
+  btn.disabled=true
+  res.innerHTML=`<div class="verdict verdict-safe" style="justify-content:flex-start">${spinner()} Scanning URL structure...</div>`
+  const t0=performance.now()
+  try{
+    const r=await fetch('/api/analyze/url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})})
+    const d=await r.json()
+    if(d.error){res.innerHTML=`<div class="factor up">Error: ${d.error}</div>`;return}
+    const ms=(performance.now()-t0).toFixed(0)
+    res.innerHTML=renderVerdict(d.label,d.risk_score,d.model_used)
+      +renderFactors(d.top_factors,'url')
+      +`<div class="elapsed">⏱ analyzed in ${ms} ms</div>`
+  }catch(e){res.innerHTML=`<div class="factor up">Error: ${e.message}</div>`}
+  finally{btn.disabled=false}
+}
+
+/* ── Email Analysis ── */
+async function analyzeEmail(){
+  const text=$('email-input').value.trim()
+  if(!text) return
+  const btn=$('email-btn'); const res=$('email-result')
+  btn.disabled=true
+  res.innerHTML=`<div class="verdict verdict-safe" style="justify-content:flex-start">${spinner()} Analyzing email content...</div>`
+  const t0=performance.now()
+  try{
+    const r=await fetch('/api/analyze/email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})})
+    const d=await r.json()
+    if(d.error){res.innerHTML=`<div class="factor up">Error: ${d.error}</div>`;return}
+    const ms=(performance.now()-t0).toFixed(0)
+    res.innerHTML=renderVerdict(d.label,d.risk_score,d.model_used)
+      +renderFactors(d.top_tokens,'email')
+      +`<div class="elapsed">⏱ analyzed in ${ms} ms</div>`
+  }catch(e){res.innerHTML=`<div class="factor up">Error: ${e.message}</div>`}
+  finally{btn.disabled=false}
+}
+
+/* ── Reputation ── */
+async function checkReputation(){
+  const url=$('rep-input').value.trim()
+  if(!url) return
+  const btn=$('rep-btn'); const res=$('rep-result')
+  btn.disabled=true
+  res.innerHTML=`<div class="verdict verdict-safe" style="justify-content:flex-start">${spinner()} Querying URLhaus...</div>`
+  const t0=performance.now()
+  try{
+    const r=await fetch('/api/analyze/reputation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})})
+    const d=await r.json()
+    const ms=(performance.now()-t0).toFixed(0)
+    const rep=d.url_reputation; const hrep=d.host_reputation
+    let html=''
+    if(rep.error){
+      html=`<div class="verdict verdict-warn"><span>⚠️ URLHAUS UNREACHABLE</span></div>
+            <div class="factor up" style="margin-top:10px">${rep.error}</div>`
+    }else if(rep.status==='listed'){
+      html=renderVerdict('phishing',100,'urlhaus')
+        +`<div class="breakdown-title">── THREAT DETAILS ──</div>
+           <div class="factor up"><span class="factor-desc">Threat type</span><span class="factor-meta">${rep.threat||'unknown'}</span></div>
+           <div class="factor up"><span class="factor-desc">Status</span><span class="factor-meta">${rep.url_status||'?'}</span></div>
+           <div class="factor up"><span class="factor-desc">Tags</span><span class="factor-meta">${(rep.tags||[]).join(', ')||'none'}</span></div>
+           ${rep.reference?`<div class="factor up"><span class="factor-desc">Reference</span><span class="factor-meta"><a href="${rep.reference}" target="_blank" style="color:#00ffaa">${rep.reference}</a></span></div>`:''}`
+    }else if(hrep.status==='listed'){
+      html=renderVerdict('phishing',70,'urlhaus')
+        +`<div class="breakdown-title">── HOST HISTORY (${hrep.url_count} malicious URL${hrep.url_count!==1?'s':''}) ──</div>`
+      ;(hrep.urls||[]).forEach(u=>{
+        html+=`<div class="factor up"><span class="factor-desc">${u.url}</span><span class="factor-meta">${u.threat||'?'} · ${u.url_status||'?'}</span></div>`
+      })
+    }else{
+      html=renderVerdict('legitimate',2,'urlhaus')
+        +`<div class="factor down" style="margin-top:10px"><span class="factor-desc">✓ Not found in URLhaus threat feed</span></div>`
+    }
+    res.innerHTML=html+`<div class="elapsed">⏱ queried in ${ms} ms</div>`
+  }catch(e){res.innerHTML=`<div class="factor up">Error: ${e.message}</div>`}
+  finally{btn.disabled=false}
+}
+
+/* ── Screenshot ── */
+async function analyzeScreenshot(){
+  const url=$('screenshot-input').value.trim()
+  if(!url) return
+  const btn=$('screenshot-btn'); const res=$('screenshot-result')
+  btn.disabled=true
+  res.innerHTML=`<div class="verdict verdict-safe" style="justify-content:flex-start">${spinner()} Launching browser & capturing screenshot...</div>`
+  const t0=performance.now()
+  try{
+    const r=await fetch('/api/analyze/screenshot',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})})
+    const d=await r.json()
+    const ms=((performance.now()-t0)/1000).toFixed(2)
+    if(d.error){res.innerHTML=`<div class="factor up" style="margin-top:10px">Error: ${d.error}</div>`;return}
+    let html=''
+    if(d.screenshot_path){
+      const fname=d.screenshot_path.split(/[/\\]/).pop()
+      html+=`<img class="screenshot-img" src="/screenshots/${fname}" alt="screenshot">`
+    }
+    if(d.warning){
+      html+=renderVerdict('phishing',70,'phash-similarity')
+        +`<div class="breakdown-title">── VISUAL SIMILARITY WARNING ──</div>
+           <div class="factor up"><span class="factor-desc">${d.warning}</span></div>`
+    }else{
+      html+=renderVerdict('legitimate',5,'phash-similarity')
+        +`<div class="factor down" style="margin-top:10px"><span class="factor-desc">✓ No brand impersonation detected</span></div>`
+    }
+    if(d.brand_matches&&d.brand_matches.length){
+      html+='<div class="breakdown-title">── CLOSEST BRAND MATCHES ──</div>'
+      d.brand_matches.slice(0,5).forEach(m=>{
+        const flag=m.similar?'⚠️':'✓'
+        html+=`<div class="factor ${m.similar?'up':'down'}">
+          <span class="factor-desc">${flag} ${m.brand}</span>
+          <span class="factor-meta">hash dist=${m.distance}</span>
+        </div>`
+      })
+    }
+    if(d.phash) html+=`<div class="elapsed">⏱ ${ms}s · pHash: <code>${d.phash}</code></div>`
+    res.innerHTML=html
+  }catch(e){res.innerHTML=`<div class="factor up">Error: ${e.message}</div>`}
+  finally{btn.disabled=false}
+}
+
+/* ── Enter key support ── */
+['url-input','rep-input','screenshot-input'].forEach(id=>{
+  const el=document.getElementById(id)
+  if(el) el.addEventListener('keydown',e=>{if(e.key==='Enter'){
+    if(id==='url-input') analyzeUrl()
+    else if(id==='rep-input') checkReputation()
+    else if(id==='screenshot-input') analyzeScreenshot()
+  }})
+})
+</script>
+</body>
+</html>
